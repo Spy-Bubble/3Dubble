@@ -1,20 +1,62 @@
 import streamlit as st
 import sqlite3
+# Importa tus agentes y utilidades aquí...
+from agente_atencion import AgenteAtencion
+from agente_inferencia import AgenteInferencia
+from agente_explicador import AgenteExplicador
+from schemas import IntencionCliente, ElementoPedido
 
-# --- INICIALIZAR EL CARRITO DE COMPRAS ---
+st.set_page_config(page_title="3Dubble Sistema Experto", page_icon="🧊", layout="wide")
+
+# --- FUNCIÓN AUXILIAR PARA BASE DE DATOS ---
+def asegurar_esquema_db():
+    """Verifica si la base de datos tiene la nueva estructura y la actualiza si no es así."""
+    conn = sqlite3.connect("inventario3d.db")
+    cursor = conn.cursor()
+    try:
+        # Intentamos leer la nueva columna
+        cursor.execute("SELECT tipo_insumo FROM inventario LIMIT 1")
+    except sqlite3.OperationalError:
+        # Si da error, significa que no existe. ¡La creamos en este instante!
+        cursor.execute("ALTER TABLE inventario ADD COLUMN tipo_insumo TEXT DEFAULT 'Filamento'")
+        conn.commit()
+    finally:
+        conn.close()
+
+# Ejecutamos el chequeo silencioso cada vez que arranca la app
+asegurar_esquema_db()
+
+def consultar_opciones(query, parametros=()):
+    conn = sqlite3.connect("inventario3d.db")
+    cursor = conn.cursor()
+    cursor.execute(query, parametros)
+    resultados = [fila[0] for fila in cursor.fetchall()]
+    conn.close()
+    return resultados
+
+# ==========================================
+# 1. INICIALIZACIÓN DE MEMORIA Y CARRITO
+# ==========================================
 if "carrito" not in st.session_state:
     st.session_state.carrito = []
+if "messages_soporte" not in st.session_state:
+    st.session_state.messages_soporte = [] # Historial separado solo para soporte
 
-# --- FUNCIÓN CALLBACK PARA BOTONES ---
-def agregar_sustituto_al_carrito(nombre_producto, precio):
-    st.session_state.carrito.append({
-        "producto": nombre_producto,
-        "cantidad": 1,
-        "total": precio
-    })
-
-# --- BARRA LATERAL (SIEMPRE VISIBLE) --- 
+# ==========================================
+# 2. BARRA LATERAL (NAVEGACIÓN Y CARRITO)
+# ==========================================
 with st.sidebar:
+    st.title("⚙️ 3Dubble OS")
+    
+    # Menú de navegación principal
+    modulo_activo = st.radio(
+        "Selecciona el Módulo Operativo:",
+        ["🛒 Compras e Inventario", "🛠️ Soporte Técnico (IA)"]
+    )
+    
+    st.divider()
+    
+    # El carrito siempre visible
     st.header("🛒 Tu Pedido Actual")
     if len(st.session_state.carrito) == 0:
         st.info("Tu carrito está vacío.")
@@ -26,220 +68,156 @@ with st.sidebar:
         
         st.divider()
         st.subheader(f"Total: ${total_pagar}")
-        
         if st.button("Finalizar Compra ✅"):
             st.balloons()
             st.success("¡Pedido enviado a producción!")
-            # Opcional: Limpiar el carrito después de comprar
-            # st.session_state.carrito = []
+            st.session_state.carrito = [] # Limpiamos tras comprar
+            st.rerun()
 
-# Importamos las clases de tus agentes (eliminamos la línea de consultar_stock que fallaba)
-from agente_atencion import AgenteAtencion
-from agente_inferencia import AgenteInferencia
-from agente_explicador import AgenteExplicador
+# ==========================================
+# 3. MÓDULO 1: COMPRAS (FILTROS INDEPENDIENTES)
+# ==========================================
+if modulo_activo == "🛒 Compras e Inventario":
+    
+    # 🔥 1. Variables inicializadas en la raíz para silenciar a Pylint
+    btn_analizar = False
+    cantidad_final = 1
+    producto_elegido_str = ""
 
-# Configuración de la página en modo ancho
-st.set_page_config(page_title="3Dubble AI", layout="wide", page_icon="🤖")
+    st.header("📦 Catálogo Dinámico de 3Dubble")
+    st.write("Filtra los productos como prefieras. ¡No hay un orden obligatorio!")
+    
+    # --- SECCIÓN 1: FILTROS INDEPENDIENTES ---
+    st.subheader("🔍 Filtros de Búsqueda")
+    
+    # Colocamos los 4 filtros en línea horizontal para ahorrar espacio
+    col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+    
+    with col_f1:
+        tipos_db = consultar_opciones("SELECT DISTINCT tipo FROM inventario")
+        tipo_sel = st.selectbox("Categoría:", ["--- Todos ---"] + (tipos_db if tipos_db else []))
+        
+    with col_f2:
+        marcas_db = consultar_opciones("SELECT DISTINCT marca FROM inventario")
+        marca_sel = st.selectbox("Marca:", ["--- Todos ---"] + (marcas_db if marcas_db else []))
+        
+    with col_f3:
+        mat_db = consultar_opciones("SELECT DISTINCT material FROM inventario")
+        mat_sel = st.selectbox("Familia/Material:", ["--- Todos ---"] + (mat_db if mat_db else []))
+        
+    with col_f4:
+        color_db = consultar_opciones("SELECT DISTINCT color FROM inventario")
+        color_sel = st.selectbox("Variante/Color:", ["--- Todos ---"] + (color_db if color_db else []))
 
-st.title("🤖 3Dubble: Sistema Multi-Agente para Gestión de Impresión 3D")
-st.caption("Orquestación local con Ollama y SQLite para control de insumos y filamentos")
-
-# --- FUNCION PARA CARGAR EL INVENTARIO ---
-def cargar_inventario():
+    # --- SECCIÓN 2: MOTOR DE BÚSQUEDA DINÁMICO ---
+    # Armamos la consulta SQL sumando solo los filtros que el usuario haya seleccionado
+    query_base = "SELECT tipo, marca, material, color, precio, stock, url_imagen FROM inventario WHERE 1=1"
+    parametros = []
+    
+    if tipo_sel != "--- Todos ---":
+        query_base += " AND tipo = ?"
+        parametros.append(tipo_sel)
+    if marca_sel != "--- Todos ---":
+        query_base += " AND marca = ?"
+        parametros.append(marca_sel)
+    if mat_sel != "--- Todos ---":
+        query_base += " AND material = ?"
+        parametros.append(mat_sel)
+    if color_sel != "--- Todos ---":
+        query_base += " AND color = ?"
+        parametros.append(color_sel)
+        
+    # Ejecutamos la búsqueda con las condiciones armadas
     conn = sqlite3.connect("inventario3d.db")
     cursor = conn.cursor()
-    # Traemos las nuevas columnas en orden para la tabla de Streamlit
-    cursor.execute("SELECT producto_base, tipo, marca, material, color, stock, precio FROM inventario")
-    datos = cursor.fetchall()
+    cursor.execute(query_base, parametros)
+    productos_encontrados = cursor.fetchall()
     conn.close()
-    return datos
-
-# --- DISEÑO DE PASARELA EN COLUMNAS ---
-col_inv, col_chat = st.columns([1, 2])  # Proporción 1:2 para darle más espacio al chat
-
-# COUMNAP I: Monitor de Inventario Local
-with col_inv:
-    st.subheader("📦 Inventario de Filamentos")
-    if st.button("🔄 Actualizar Tabla"):
-        st.rerun()
     
-# Renderizar los datos actualizados de SQLite con mapeo exacto
-    inventario = cargar_inventario() # Asegúrate de que tu consulta sea: SELECT producto_base, tipo, marca, material, color, stock, precio FROM inventario
-    if inventario:
-        import pandas as pd
-        # Convertimos a DataFrame y le asignamos los nombres reales de las columnas de la BD
-        df_inventario = pd.DataFrame(inventario, columns=[
-            "producto_base", "tipo", "marca", "material", "color", "stock", "precio"
-        ])
+    st.divider()
+
+    # --- SECCIÓN 3: RESULTADOS Y COMPRA ---
+    if not productos_encontrados:
+        st.warning("⚠️ No encontramos ningún producto con esa combinación exacta de filtros.")
+    else:
+        st.success(f"✅ Se encontraron {len(productos_encontrados)} producto(s) coincidentes.")
         
-        # Ahora configuramos etiquetas bonitas usando los nombres de las columnas
-        st.dataframe(df_inventario, column_config={
-            "producto_base": "Descripción Base",
-            "tipo": "Tipo de Insumo",
-            "marca": "Marca",
-            "material": "Material",
-            "color": "Especificación / Color",
-            "stock": "Stock Disponible",
-            "precio": "Precio Unitario ($)"
-        }, use_container_width=True, hide_index=True)
+        # Formateamos la lista de resultados para mostrarlos en un menú final
+        # Cada fila trae: (tipo, marca, material, color, precio, stock, url_imagen)
+        lista_nombres = [f"{p[0]} {p[1]} {p[2]} {p[3]}" for p in productos_encontrados]
+        
+        col_res, col_img = st.columns([2, 1])
+        
+        with col_res:
+            producto_elegido_str = st.selectbox("👇 Selecciona el producto exacto a visualizar/comprar:", lista_nombres)
+            
+            # Obtenemos todos los datos del producto seleccionado
+            idx = lista_nombres.index(producto_elegido_str)
+            prod_data = productos_encontrados[idx]
+            stock_disponible = prod_data[5]
+            
+            st.markdown(f"**Precio:** ${prod_data[4]:,.2f}")
+            st.markdown(f"**Stock Disponible:** {stock_disponible} unidades")
+            
+            if stock_disponible > 0:
+                cantidad_final = st.number_input("Cantidad deseada:", min_value=1, max_value=stock_disponible, value=1)
+                btn_analizar = st.button("🛍️ Analizar y Agregar al Carrito", type="primary")
+            else:
+                st.error("⚠️ Este producto está agotado actualmente (Stock 0).")
+                
+        with col_img:
+            url_img = prod_data[6]
+            if url_img:
+                st.image(url_img, use_container_width=True)
+            else:
+                st.info("🖼️ Imagen no disponible")
 
-# COLUMNA II: Consola Multi-Agente y Chat
-with col_chat:
-    st.subheader("💬 Consola de Control de IA")
+    # --- SECCIÓN 4: LÓGICA DE MOTOR DE INFERENCIA ---
+    if btn_analizar:
+        with st.spinner("Motor de inferencia validando stock..."):
+            
+            datos_compra = IntencionCliente(
+                tipo_solicitud="COMPRA",
+                productos_solicitados=[ElementoPedido(producto=producto_elegido_str, cantidad=cantidad_final)]
+            )
+            
+            agente_inferencia = AgenteInferencia()
+            resultado = agente_inferencia.procesar_solicitud(datos_compra)
+            
+            if resultado.get("aprobado"):
+                for articulo in resultado.get("pedido", []):
+                    # Validar para no duplicar en UI
+                    if not any(item["producto"] == articulo["producto"] for item in st.session_state.carrito):
+                        st.session_state.carrito.append({
+                            "producto": articulo["producto"],
+                            "cantidad": articulo["cantidad"],
+                            "total": articulo["total"]
+                        })
+                st.success(f"¡{cantidad_final}x {producto_elegido_str} agregado con éxito!")
+                st.rerun()
+            else:
+                st.error("⚠️ El sistema ha detectado una inconsistencia de stock.")
+                agente3 = AgenteExplicador()
+                explicacion = agente3.explicar_decisiones("Explicación de inventario", resultado)
+                st.markdown(explicacion)
+# ==========================================
+# 4. MÓDULO 2: SOPORTE TÉCNICO (IA CONVERSACIONAL)
+# ==========================================
+elif modulo_activo == "🛠️ Soporte Técnico (IA)":
+    st.header("🤖 Asistente Experto de Impresión 3D")
+    st.write("¿Tienes problemas de adherencia, atascos o dudas de temperaturas? Describe tu problema:")
     
-    # Inicializar el historial del chat en la sesión de Streamlit para que no se borre
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    # Mostrar mensajes anteriores del historial
-    for message in st.session_state.messages:
+    # Dibujar el historial de chat de soporte
+    for message in st.session_state.messages_soporte:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-# Entrada de texto del usuario (Chat Input)
-    if prompt := st.chat_input("¿Qué deseas imprimir o consultar hoy?"):
-        # Mostrar el mensaje del usuario en la pantalla
+    # Input de lenguaje natural (Aquí sí usamos al Agente 1)
+    if prompt := st.chat_input("Ej: Mi pieza de PETG se despega de la cama..."):
+        st.session_state.messages_soporte.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
-        # Contenedor visual para la respuesta de la IA y el razonamiento de los agentes
-        with st.chat_message("assistant"):
-            # Creamos los contenedores de las pestañas
-            tab1, tab2, tab3, tab_final = st.tabs([
-                "🕵️ Agente 1 (Intención)", 
-                "🧮 Agente 2 (Inferencia)", 
-                "✍️ Agente 3 (Explicación)", 
-                "🤖 Respuesta Final"
-            ])
             
-# --- EJECUCIÓN DEL AGENTE 1 ---
-            with tab1:
-                st.subheader("Análisis de Lenguaje Natural (Ollama)")
-                with st.spinner("Extraendo intenciones..."):
-                    
-                    # 1. Filtramos y limpiamos el historial (solo peticiones del usuario)
-                    mensajes_usuario = [msg["content"] for msg in st.session_state.messages if msg["role"] == "user"]
-                    
-                    # 2. Juntamos las últimas 2 entradas con un separador limpio
-                    historial_limpio = " | ".join(mensajes_usuario[-2:]) if mensajes_usuario else prompt
-                    
-                    # Inicializamos tu agente de atención
-                    atencion = AgenteAtencion()
-                    
-                    # 🔥 LA CLAVE: Le pasamos el historial limpio al agente
-                    intencion_pydantic = atencion.procesar_mensaje(historial_limpio)
-                
-                st.success("¡Intención extraída con éxito!")
-                # Mostramos el JSON estructurado que generó Pydantic
-                st.json(intencion_pydantic.model_dump())
-
-            # --- EJECUCIÓN DEL AGENTE 2 ---
-            with tab2:
-                st.subheader("Motor de Inferencia Determinista (SQLite)")
-                with st.spinner("Evaluando reglas de negocio y stock..."):
-                    # Inicializamos tu motor experto
-                    inferencia = AgenteInferencia()
-                    # Pasamos el objeto Pydantic directamente al Agente 2
-                    resultado_inferencia = inferencia.procesar_solicitud(intencion_pydantic)
-                
-                st.success("Cálculo de factibilidad terminado.")
-                # Mostramos el diccionario resultante del estado del inventario
-                st.write(resultado_inferencia)
-                
-                if resultado_inferencia.get("aprobado"):
-                    for articulo in resultado_inferencia.get("pedido", []):
-                        # Verificamos que no esté repetido para no duplicarlo al recargar
-                        if articulo not in st.session_state.carrito:
-                            st.session_state.carrito.append(articulo)
-
-            # --- ALIMENTAR EL CARRITO (PARCIAL O TOTAL) ---
-            # Iteramos sobre los productos que el Agente 2 SÍ logró aprobar (ej. El Amarillo)
-            for articulo in resultado_inferencia.get("pedido", []):
-                # Validamos que no esté ya en el carrito para no duplicarlo al recargar
-                if not any(item["producto"] == articulo["producto"] for item in st.session_state.carrito):
-                    st.session_state.carrito.append({
-                        "producto": articulo["producto"],
-                        "cantidad": articulo["cantidad"],
-                        "total": articulo["total"]
-                    })
-                
-            # --- EJECUCIÓN DEL AGENTE 3 ---
-            with tab3:
-                st.subheader("Generador de Justificaciones (IA Local)")
-                with st.spinner("Redactando explicación técnica..."):
-                    # Inicializamos tu agente explicador
-                    explicador = AgenteExplicador()
-                    # Le pasamos el prompt original y el dict del Agente 2
-                    argumentacion_final = explicador.explicar_decisiones(prompt, resultado_inferencia)
-                
-                st.info("Razonamiento del modelo estructurado:")
-                st.markdown(argumentacion_final)
-       
-            # --- PESTAÑA FINAL: EXPERIENCIA DE USUARIO ---
-            with tab_final:
-                st.subheader("🛍️ Propuesta de Servicio de 3Dubble")
-                with st.spinner("Dándole formato comercial al reporte..."):
-                    # El prompt que limpia las reglas técnicas para el cliente
-                    prompt_consolidacion = f"""
-                    Eres el agente de interfaz de 3Dubble. Tu tarea es tomar el siguiente reporte técnico interno de una solicitud de impresión 3D y transformarlo en una respuesta amable, clara y comercial para el cliente final. 
-                    Elimina menciones explícitas a código, nombres de variables o reglas lógicas "IF/THEN". Presenta las opciones de forma atractiva.
-
-                    Reporte Técnico:
-                    {argumentacion_final}
-                    """
-                    
-                    # Llamada directa a tu Ollama local
-                    import ollama
-                    response = ollama.generate(model="gemma4", prompt=prompt_consolidacion)
-                    respuesta_limpia = response['response']
-
-                st.balloons()  # ¡Efecto de celebración de Streamlit!
-                st.markdown(respuesta_limpia)
-
-            # --- INTERFAZ DE BOTONES DINÁMICOS --- 
-                if resultado_inferencia.get("estatus") == "REVISIÓN_REABASTECIMIENTO":
-                    st.divider()
-                    
-                    # 1. Base de conocimiento de alternativas (Diccionario Experto)
-                    alternativas_db = {
-                        "PURPLE": [("LILAC 🟣", "eSUN PLA+ LILAC"), ("MAGENTA 🌺", "eSUN PLA+ MAGENTA")],
-                        "RED": [("FIRE ENGINE RED 🚒", "eSUN PLA+ FIRE ENGINE RED"), ("BRICK RED 🧱", "eSUN PLA+ BRICK RED")],
-                        "BLUE": [("SOFT BLUE 💧", "eSUN PLA+ SOFT BLUE"), ("SPACE BLUE 🌌", "eSUN PLA+ SPACE BLUE")],
-                        "GREEN": [("MINT GREEN 🍃", "eSUN PLA+ MINT GREEN"), ("PINE GREEN 🌲", "eSUN PLA+ PINE GREEN")],
-                        "PINK": [("PEACH PINK 🍑", "eSUN PLA+ PEACH PINK"), ("SOFT PINK 🌸", "eSUN PLA+ SOFT PINK")]
-                    }
-                    
-                    # 2. Detector automático del color agotado
-                    # Escaneamos el reporte del Agente 2 para ver qué palabra clave activó el fallo
-                    color_agotado_encontrado = None
-                    inferencias = resultado_inferencia.get("inferencias_realizadas", [])
-                    
-                    for color_clave in alternativas_db.keys():
-                        # Verificamos si la palabra clave (ej. "PURPLE") está en el texto de fallo
-                        if any(color_clave in inf for inf in inferencias):
-                            color_agotado_encontrado = color_clave
-                            break
-                            
-                    # 3. Renderizado de botones "al vuelo"
-                    if color_agotado_encontrado:
-                        st.warning("⚠️ Detectamos que un artículo está agotado. ¿Deseas sustituirlo por alguna de estas opciones compatibles?")
-                        
-                        # Extraemos la lista de opciones para ese color específico
-                        opciones = alternativas_db[color_agotado_encontrado]
-                        
-                        # Creamos la cantidad exacta de columnas según las opciones disponibles
-                        cols = st.columns(len(opciones))
-                        for i, (label_boton, nombre_producto) in enumerate(opciones):
-                            with cols[i]:
-                                st.button(
-                                    f"Sustituir por {label_boton}", 
-                                    key=f"btn_sustituto_{color_agotado_encontrado}_{i}", # Clave única vital en Streamlit
-                                    on_click=agregar_sustituto_al_carrito,
-                                    args=(nombre_producto, 325.0)
-                                )
-                    else:
-                        st.info("⚠️ Un artículo de tu pedido requiere revisión de stock. Un asesor lo revisará en breve.")
-                
-        # Guardamos la respuesta verdaderamente consolidada en el historial
-        st.session_state.messages.append({"role": "assistant", "content": respuesta_limpia})
+        with st.chat_message("assistant"):
+            with st.spinner("Analizando con ingeniería de conocimiento..."):
+                pass

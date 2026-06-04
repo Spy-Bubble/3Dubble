@@ -11,10 +11,11 @@ class AgenteInferencia:
         
         # 🔥 CORRECCIÓN SQL: Buscamos en la nueva columna 'color' 
         # y concatenamos dinámicamente un nombre descriptivo para el Agente 3
+       # 🔥 CORRECCIÓN SQL: Concatenamos las 4 columnas (tipo, marca, material, color)
         cursor.execute("""
-            SELECT id, (marca || ' ' || material || ' ' || color), stock, precio 
+            SELECT id, (tipo || ' ' || marca || ' ' || material || ' ' || color), stock, precio 
             FROM inventario 
-            WHERE color LIKE ?
+            WHERE (tipo || ' ' || marca || ' ' || material || ' ' || color) LIKE ?
         """, (f"%{identificador_color}%",))
         
         resultado = cursor.fetchone()

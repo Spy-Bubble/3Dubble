@@ -32,6 +32,8 @@ def crear_base_datos():
             
             productos_inicio = []
             for fila in lector:
+                if not fila.get('producto_base') or not str(fila.get('producto_base')).strip():
+                    continue
                 productos_inicio.append((
                     fila['producto_base'],
                     fila['tipo'],
