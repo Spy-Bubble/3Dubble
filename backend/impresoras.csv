@@ -1,0 +1,11 @@
+modelo,marca,volumen_impresion,stock,precio,url_imagen
+U1,Snapmaker,400x400x400 mm,5,1599.00,https://via.placeholder.com/500x500/E87A5D/FFFFFF?text=Snapmaker+U1
+J1s,Snapmaker,300x200x200 mm,3,1099.00,https://via.placeholder.com/500x500/E87A5D/FFFFFF?text=Snapmaker+J1s
+Neptune 4 Pro,Elegoo,225x225x265 mm,15,299.00,https://via.placeholder.com/500x500/0284C7/FFFFFF?text=Neptune+4+Pro
+Neptune 4 Max,Elegoo,420x420x480 mm,8,470.00,https://via.placeholder.com/500x500/0284C7/FFFFFF?text=Neptune+4+Max
+Ender 3 V3 KE,Creality,220x220x240 mm,20,279.00,https://via.placeholder.com/500x500/18181B/FFFFFF?text=Ender+3+V3
+K1 Max,Creality,300x300x300 mm,6,899.00,https://via.placeholder.com/500x500/18181B/FFFFFF?text=K1+Max
+X1-Carbon,Bambu Lab,256x256x256 mm,4,1199.00,https://via.placeholder.com/500x500/3F3F46/FFFFFF?text=X1-Carbon
+P1S,Bambu Lab,256x256x256 mm,10,699.00,https://via.placeholder.com/500x500/3F3F46/FFFFFF?text=P1S
+i3 MK4,Prusa,250x210x220 mm,5,799.00,https://via.placeholder.com/500x500/D97706/FFFFFF?text=Prusa+MK4
+Artillery Sidewinder X3,Artillery,240x240x260 mm,12,250.00,https://via.placeholder.com/500x500/2563EB/FFFFFF?text=Sidewinder+X3
