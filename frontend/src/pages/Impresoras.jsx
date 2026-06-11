@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 function Impresoras() {
   const [impresoras, setImpresoras] = useState([]);
+  const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
     fetch('http://localhost:8000/api/impresoras')
@@ -10,6 +11,15 @@ function Impresoras() {
       .then(datos => setImpresoras(datos))
       .catch(error => console.error("Error de conexión:", error));
   }, []);
+
+  // Lógica de filtrado
+  const impresorasFiltradas = impresoras.filter(impresora => {
+    const textoBuscado = busqueda.toLowerCase();
+    return (
+      impresora.modelo.toLowerCase().includes(textoBuscado) ||
+      impresora.marca.toLowerCase().includes(textoBuscado)
+    );
+  });
 
   return (
     <div className="min-h-screen bg-[#140D05] text-white p-10">
@@ -20,9 +30,20 @@ function Impresoras() {
 
       <h1 className="text-4xl font-bold text-[#D97706] mb-10">Equipos de Impresión</h1>
 
+    {/* Barra de Búsqueda */}
+      <div className="mb-10 max-w-md">
+        <input 
+          type="text" 
+          placeholder="Buscar por modelo o marca..." 
+          className="w-full bg-[#1C130A] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-[#D97706]/50 transition-colors placeholder-white/30"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         
-        {impresoras.map((impresora) => (
+        {impresorasFiltradas.map((impresora) => (
           <div key={impresora.id} className="bg-[#1C130A] border border-white/5 rounded-xl p-4 hover:border-white/20 transition-colors group flex flex-col h-full">
             
             <div className="aspect-square w-full bg-black/40 rounded-lg mb-4 overflow-hidden flex items-center justify-center shrink-0">

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 function Filamentos() {
   const [filamentos, setFilamentos] = useState([]);
+  const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
     fetch('http://localhost:8000/api/filamentos')
@@ -10,6 +11,16 @@ function Filamentos() {
       .then(datos => setFilamentos(datos))
       .catch(error => console.error("Error de conexión:", error));
   }, []);
+
+  // Lógica de filtrado en tiempo real
+  const filamentosFiltrados = filamentos.filter(filamento => {
+    const textoBuscado = busqueda.toLowerCase();
+    return (
+      filamento.material.toLowerCase().includes(textoBuscado) ||
+      filamento.color.toLowerCase().includes(textoBuscado) ||
+      filamento.marca.toLowerCase().includes(textoBuscado)
+    );
+  });
 
   return (
     <div className="min-h-screen bg-[#140505] text-white p-10">
@@ -20,10 +31,20 @@ function Filamentos() {
 
       <h1 className="text-4xl font-bold text-[#DC2626] mb-10">Catálogo de Filamentos</h1>
 
+      <div className="mb-10 max-w-md">
+        <input 
+          type="text" 
+          placeholder="Buscar por material, color o marca..." 
+          className="w-full bg-[#1C0909] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-[#DC2626]/50 transition-colors placeholder-white/30"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         
-        {filamentos.map((filamento) => (
-          <div key={filamento.id} className="bg-[#1C0909] border border-white/5 rounded-xl p-4 hover:border-[#E87A5D]/50 transition-colors group flex flex-col h-full">
+        {filamentosFiltrados.map((filamento) => (
+          <div key={filamento.id} className="bg-[#1C0909] border border-white/5 rounded-xl p-4 hover:border-[#DC2626]/50 transition-colors group flex flex-col h-full">
             
             {/* Contenedor de la Imagen */}
             <div className="aspect-square w-full bg-black/40 rounded-lg mb-4 overflow-hidden flex items-center justify-center shrink-0">
