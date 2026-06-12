@@ -1,11 +1,19 @@
 modelo,marca,volumen_impresion,stock,precio,url_imagen
-U1,Snapmaker,400x400x400 mm,5,1599.00,https://via.placeholder.com/500x500/E87A5D/FFFFFF?text=Snapmaker+U1
-J1s,Snapmaker,300x200x200 mm,3,1099.00,https://via.placeholder.com/500x500/E87A5D/FFFFFF?text=Snapmaker+J1s
-Neptune 4 Pro,Elegoo,225x225x265 mm,15,299.00,https://via.placeholder.com/500x500/0284C7/FFFFFF?text=Neptune+4+Pro
-Neptune 4 Max,Elegoo,420x420x480 mm,8,470.00,https://via.placeholder.com/500x500/0284C7/FFFFFF?text=Neptune+4+Max
-Ender 3 V3 KE,Creality,220x220x240 mm,20,279.00,https://via.placeholder.com/500x500/18181B/FFFFFF?text=Ender+3+V3
-K1 Max,Creality,300x300x300 mm,6,899.00,https://via.placeholder.com/500x500/18181B/FFFFFF?text=K1+Max
-X1-Carbon,Bambu Lab,256x256x256 mm,4,1199.00,https://via.placeholder.com/500x500/3F3F46/FFFFFF?text=X1-Carbon
-P1S,Bambu Lab,256x256x256 mm,10,699.00,https://via.placeholder.com/500x500/3F3F46/FFFFFF?text=P1S
-i3 MK4,Prusa,250x210x220 mm,5,799.00,https://via.placeholder.com/500x500/D97706/FFFFFF?text=Prusa+MK4
-Artillery Sidewinder X3,Artillery,240x240x260 mm,12,250.00,https://via.placeholder.com/500x500/2563EB/FFFFFF?text=Sidewinder+X3
+U1,Snapmaker,270x270x270 mm,5,14800,https://shop.snapmaker.com/cdn/shop/files/U1_c9534a17-eea4-4937-b1d6-13b45ccc7ca0.webp?v=1763625676&width=900
+Centauri Carbon,Elegoo,256x256x256 mm,8,5600,https://us.elegoo.com/cdn/shop/files/CC-1_2_d76c522e-8b40-4995-aab0-dd84b783441d.jpg?crop=center&v=1751366271&width=1220
+Centauri Carbon 2 ,Elegoo,256x256x256 mm,4,6100,https://us.elegoo.com/cdn/shop/files/Centauri-Carbon-2-_-Modle-Front_d754eca1-128b-4c80-86f7-c322f322ac36.jpg?crop=center&v=1778830380&width=1220
+Neptune 4 Max,Elegoo,420x420x480 mm,8,8200,https://us.elegoo.com/cdn/shop/files/N4M-1_2.jpg?crop=center&v=1748226636&width=1220
+Neptune 3 Max,Elegoo,420x420x500 mm,11,7600,https://us.elegoo.com/cdn/shop/products/ELEGOO-Neptune-3-Max-3.jpg?crop=center&v=1710302542&width=1220
+K2 Plus,Creality,350x350x350 mm,6,32200,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/K2_plus.png?v=1745563600
+Ender-3 V3 SE,Creality,220x220x250 mm,4,5100,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/Ender-3_V3_SE_03.png?v=1767855413
+K1,Creality,220x220x250 mm,10,9600,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/K1-_02-2.png?v=1769494592
+A1 Mini,Bambu Lab,180x180x180 mm,5,5800,https://m.media-amazon.com/images/I/61y7B6WeG9L._AC_CR0%2C0%2C0%2C0_SX615_SY462_.jpg
+P1S,Bambu Lab,256x256x256 mm,7,10800,https://www.3dmarket.mx/wp-content/uploads/2023/08/Impresora-3D-Bambu-Lab-P1S.webp
+P2S,Bambu Lab,256x256x256 mm,4,13300,https://www.3dmarket.mx/wp-content/uploads/2025/10/P2S-Bambu-Lab-1.webp
+H2C,Bambu Lab,300x320x325 mm,6,50500,https://www.3dmarket.mx/wp-content/uploads/2025/11/h2c-bambulab-p1.webp
+H2S,Bambu Lab,340x320x340 mm,2,26500,https://www.3dmarket.mx/wp-content/uploads/2025/08/H2S-Bambu-Lab.webp
+K2 Plus,Creality,350x350x350 mm,6,27800,https://www.3dmarket.mx/wp-content/uploads/2025/07/K2-Plus-Creality.webp
+Creator 5,Flashforge,256x256x256 mm,3,15700,https://ae-pic-a1.aliexpress-media.com/kf/Sacafde7507ae4ee48d03ed96053428d93.png
+CORE One+,Prusa,250x220x270 mm,9,23300,"https://www.prusa3d.com/cdn-cgi/image/width=750,format=auto,quality=85/content/images/product/f2638118-94a5-495d-b488-93ffb93ece17.jpg"
+CORE One L,Prusa,300x300x330 mm,6,35900,"https://www.prusa3d.com/cdn-cgi/image/width=750,format=auto,quality=85/content/images/product/29e113c0-c219-4ec0-ad69-3de60713e741.jpg"
+Original Prusa XL,Prusa,360x360x360 mm,3,41200,"https://www.prusa3d.com/cdn-cgi/image/width=750,format=auto,quality=85/content/images/product/5428.jpg"
