@@ -11,7 +11,7 @@ Plataforma integral de comercio electrónico especializada en impresión 3D (fil
 Para ejecutar este proyecto, especialmente el motor de inteligencia artificial local, se requiere:
 * Python 3.10+ y Node.js instalados.
 * [Ollama](https://ollama.com/) instalado en el sistema.
-* **Hardware:** Para una inferencia fluida sin latencia perceptible en el agente de ventas, se recomienda una GPU dedicada con buena capacidad de VRAM, como una NVIDIA GeForce RTX 4060 Ti o superior.
+* **Hardware:** Para una inferencia fluida sin latencia perceptible en el agente de ventas, se recomienda una GPU dedicada con buena capacidad de VRAM, para este proyecto se uso una NVIDIA GeForce RTX 4060 Ti.
 
 --- 
 
