@@ -75,12 +75,6 @@ function Impresoras() {
                   </span>
                 </div>
               </div>
-              
-              <div className="mt-5 pt-3 border-t border-white/5 flex justify-end">
-                <span className="text-[11px] bg-black/40 border border-white/5 px-3 py-1 rounded-md text-white/50 font-mono tracking-wider">
-                  STOCK: {impresora.stock}
-                </span>
-              </div>
             </div>
             
           </div>

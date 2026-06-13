@@ -51,7 +51,7 @@ function Soporte() {
     // Fondo con gradiente sutil para darle volumen y calidez
     <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#16100e] to-[#0A0A0A] text-white p-10 flex flex-col items-center">
       
-      <div className="w-full max-w-3xl flex justify-between items-center mb-8">
+      <div className="w-full max-w-5xl flex justify-between items-center mb-8">
         <Link to="/" className="text-white/50 hover:text-[#E87A5D] transition-colors text-sm tracking-widest uppercase">
           ← Volver al Inicio
         </Link>
@@ -59,7 +59,7 @@ function Soporte() {
       </div>
 
       {/* Contenedor principal del Chat con borde iluminado sutilmente */}
-      <div className="w-full max-w-3xl bg-[#121212]/80 backdrop-blur-md border border-[#E87A5D]/10 rounded-2xl flex flex-col h-[70vh] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+      <div className="w-full max-w-5xl bg-[#121212]/80 backdrop-blur-md border border-[#E87A5D]/10 rounded-2xl flex flex-col h-[85vh] shadow-[0_0_40px_rgba(0,0,0,0.5)]">
         
         {/* Historial de Mensajes */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -78,12 +78,13 @@ function Soporte() {
                       strong: ({node, ...props}) => <strong className="font-bold text-[#E87A5D]" {...props} />,
                       ul: ({node, ...props}) => <ul className="list-disc ml-5 mt-2 space-y-1" {...props} />,
                       p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
-                      // 🔥 Estilos para que la tabla se vea profesional
+                      // Estilos para que la tabla se vea profesional
                       table: ({node, ...props}) => (
                         <div className="overflow-x-auto my-4 rounded-lg border border-white/10">
                           <table className="min-w-full text-left text-sm border-collapse" {...props} />
                         </div>
                       ),
+                      img: ({node, ...props}) => <img className="max-w-full md:max-w-md rounded-xl mt-4 border border-white/10 shadow-lg" {...props} />,
                       th: ({node, ...props}) => <th className="bg-white/5 px-4 py-3 border-b border-white/10 font-bold text-[#E87A5D]" {...props} />,
                       td: ({node, ...props}) => <td className="px-4 py-3 border-b border-white/5" {...props} />
                     }}

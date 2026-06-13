@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import sqlite3
 import ollama
 import os
+import re
 
 app = FastAPI(title="3Dubble API")
 
@@ -30,6 +31,19 @@ def obtener_conexion():
     conexion = sqlite3.connect(ruta_db)
     conexion.row_factory = sqlite3.Row 
     return conexion
+
+def normalizar_notacion_numerica(texto: str):
+    # Convierte "10k" a "10000"
+    return re.sub(r'(\d+)k', lambda m: str(int(m.group(1)) * 1000), texto, flags=re.IGNORECASE)
+
+def extraer_rango_precio(texto: str):
+    texto_norm = normalizar_notacion_numerica(texto)
+    # Patrón mejorado para capturar precios
+    patron = r'(?:entre|de)?\s*(\d+)\s*(?:a|y|-)\s*(\d+)'
+    match = re.search(patron, texto_norm, re.IGNORECASE)
+    if match:
+        return int(match.group(1)), int(match.group(2))
+    return None
 
 @app.get("/")
 def read_root():
@@ -74,18 +88,30 @@ def procesar_chat(mensaje: MensajeCliente):
     cursor = conexion.cursor()
 
     # =====================================================================
-    # FASE 1: AGENTE 1 (El Ruteador / Analista Multi-Categoría)
+    # AGENTE 1 (El Ruteador / Analista Multi-Categoría)
     # =====================================================================
     mensajes_analista = [
         {
             'role': 'system',
-            'content': '''Tu único objetivo es clasificar la intención de la ÚLTIMA pregunta del usuario basándote en el contexto de la conversación.
-            
-            1. Determina la CATEGORIA exacta: FILAMENTOS, IMPRESORAS o ACCESORIOS.
-            2. Extrae las PALABRAS clave (marcas, modelos o componentes). Si el usuario dice "esa impresora" o "para ella", busca en el historial de qué modelo están hablando y extrae ese nombre real.
-            
-            Formato de respuesta ESTRICTO (Cero explicaciones, responde solo una línea con este molde):
-            CATEGORIA: <CATEGORIA> | PALABRAS: <palabras_separadas_por_comas>'''
+            'content': '''Eres un clasificador de intenciones para una tienda de impresión 3D llamada 3Dubble.
+
+    Tu tarea: analizar la ÚLTIMA pregunta del usuario y extraer exactamente dos datos.
+
+    CATEGORÍAS VÁLIDAS: FILAMENTOS | IMPRESORAS | ACCESORIOS
+
+    REGLAS DE EXTRACCIÓN:
+    - Si el usuario usa pronombres como "esa", "ella", "ese modelo", "el mismo", busca en el historial de conversación el producto real al que se refiere y usa ESE nombre.
+    - Si mencionan varios productos, extrae TODOS como palabras clave separadas por coma.
+    - Si la intención no es clara, clasifica por el producto más reciente en el historial.
+    - Ignora palabras genéricas como "quiero", "tengo", "precio", "cuánto", "hay".
+
+    FORMATO DE RESPUESTA (obligatorio, sin explicaciones, sin texto adicional):
+    CATEGORIA: <CATEGORIA> | PALABRAS: <palabra1, palabra2, palabra3>
+
+    Ejemplos correctos:
+    CATEGORIA: FILAMENTOS | PALABRAS: PLA, rojo, Bambu
+    CATEGORIA: IMPRESORAS | PALABRAS: Creality, Ender 3
+    CATEGORIA: ACCESORIOS | PALABRAS: hotend, E3D, compatibilidad'''
         }
     ]
     
@@ -118,73 +144,141 @@ def procesar_chat(mensaje: MensajeCliente):
         tabla = "impresoras"
         columnas_busqueda = ["marca", "modelo", "volumen_impresion"]
         # Columnas específicas que tiene la tabla impresoras
-        columnas_select = ["marca", "modelo", "volumen_impresion", "precio", "stock"]
+        columnas_select = ["marca", "modelo", "volumen_impresion", "precio", "stock", "url_imagen"]
     elif "ACCESORIOS" in categoria:
         tabla = "accesorios"
         columnas_busqueda = ["nombre", "compatibilidad"]
         # Columnas específicas de la tabla accesorios
-        columnas_select = ["nombre", "compatibilidad", "precio", "stock"]
+        columnas_select = ["nombre", "compatibilidad", "precio", "stock", "url_imagen"]
     else:
         tabla = "filamentos"
         columnas_busqueda = ["marca", "material", "color"]
-        columnas_select = ["marca", "material", "color", "precio", "stock"]
+        columnas_select = ["marca", "material", "color", "precio", "stock", "url_imagen"]
 
     # =====================================================================
     # FASE 3: Construcción de la Consulta SQL Dinámica (Buscador Avanzado)
     # =====================================================================
+# 1. Limpieza y preparación de palabras clave
     palabras_limpias = palabras_crudas.replace(',', ' ').replace('.', ' ')
     palabras_clave = [p.strip() for p in palabras_limpias.split() if len(p.strip()) > 1]
     
-    # Palabras de "ruido" que no queremos buscar literalmente en la base de datos
-    palabras_ignoradas = ['refaccion', 'componente', 'accesorio', 'impresora', 'filamento', 'tienes', 'hay', 'busco']
-    palabras_clave_filtradas = [p for p in palabras_clave if p.lower() not in palabras_ignoradas]
-
+    rango = extraer_rango_precio(mensaje.texto)
     condiciones = []
     parametros = []
-    
-    for palabra in palabras_clave_filtradas:
-        condiciones_por_palabra = [f"{col} LIKE ?" for col in columnas_busqueda]
-        condiciones.append(f"({' OR '.join(condiciones_por_palabra)})")
-        parametros.extend([f"%{palabra}%"] * len(columnas_busqueda))
+
+    if rango:
+        # Caso 1: El usuario pide un rango de precio
+        precio_min, precio_max = rango
+        condiciones.append("precio BETWEEN ? AND ?")
+        parametros.extend([precio_min, precio_max])
+
+    elif palabras_clave:
+        # Caso 2: El usuario menciona productos por nombre
+        for palabra in palabras_clave:
+            sub_condiciones = [f"{col} LIKE ?" for col in columnas_busqueda]
+            condiciones.append(f"({' OR '.join(sub_condiciones)})")
+            parametros.extend([f"%{palabra}%"] * len(columnas_busqueda))
 
     query = f"SELECT {', '.join(columnas_select)} FROM {tabla}"
-    
-    # Si logramos extraer palabras específicas (ej. "Snapmaker", "Boquilla"), buscamos exacto
+
     if condiciones:
-        query += " WHERE " + " AND ".join(condiciones) 
-    # Si la pregunta fue genérica (ej. "tienes accesorios?"), traemos una muestra aleatoria
-    else:
-        query += " ORDER BY RANDOM()"
-        
-    query += " LIMIT 12" 
-    
-    cursor.execute(query, parametros)
-    resultados = cursor.fetchall()
-    conexion.close()
-    
-    if not resultados:
-        datos_crudos = f"No se encontraron registros en la tabla '{tabla}' que coincidan con los criterios."
-    else:
-        datos_crudos = f"DATOS DE INVENTARIO REAL ({tabla.upper()}):\n"
-        for f in resultados:
-            detalles = [f"{col}: {f[col]}" for col in columnas_select]
-            datos_crudos += f"- " + " | ".join(detalles) + "\n"
+        # OR entre condiciones: encuentra cualquier producto que coincida
+        query += " WHERE " + " OR ".join(condiciones)
+
+    query += " ORDER BY stock DESC LIMIT 12"
 
     # =====================================================================
-    # FASE 4: AGENTE 3 (El Asesor de Ventas Final con contexto total)
+    # EJECUCIÓN EN BASE DE DATOS (Lo que faltaba para definir datos_crudos)
+    # =====================================================================
+    cursor.execute(query, parametros)
+    resultados = cursor.fetchall()
+
+    if resultados:
+        # Convertimos las filas de SQL a texto para que el Agente 2 pueda leerlo
+        datos_crudos = "\n".join([str(dict(fila)) for fila in resultados])
+    else:
+        # Si no hay coincidencias, le avisamos al Agente 2
+        datos_crudos = "No se encontraron registros en la tabla que coincidan con los criterios."
+        
+    # (Opcional) Imprimir para monitorear en la terminal qué datos salen de SQLite
+    print(f"📦 [Datos SQL Extraídos]: {datos_crudos}")
+
+    # =====================================================================
+    # AGENTE 2 (El Evaluador de Stock y Estratega de Ventas)
     # =====================================================================
     
-    # 1. Instrucción base y datos de inventario
+    prompt_agente2_sistema = '''Eres un auditor de inventario para 3Dubble.
+
+    PROCESO OBLIGATORIO:
+    1. Lista EXACTAMENTE los productos encontrados con sus datos.
+    2. Indica su estado: DISPONIBLE (stock > 0) o SIN STOCK (stock = 0).
+    3. Si stock = 0, busca alternativa real en la lista por similitud cromática o técnica.
+    4. Si no hay alternativa, indica "Ninguna".
+
+    RESTRICCIONES ABSOLUTAS:
+    - NO inventes datos, colores, modelos, precios ni URLs.
+    - Copia las URLs de imagen EXACTAMENTE como aparecen, sin modificarlas ni acortarlas.
+    - NO uses lenguaje de ventas.
+    - SOLO trabaja con los datos recibidos.
+
+    FORMATO DE SALIDA (copia los campos exactamente así):
+    PRODUCTO SOLICITADO: [nombre]
+    STOCK: [cantidad] → [DISPONIBLE / SIN STOCK]
+    PRECIO: [precio]
+    IMAGEN: [pega aquí la URL completa tal como está en los datos]
+    ALTERNATIVA RECOMENDADA: [nombre o "Ninguna"]
+    IMAGEN ALTERNATIVA: [URL completa de la alternativa o "Ninguna"]
+    ---'''
+
+    prompt_agente2_usuario = f'''Analiza estos datos de inventario y genera el informe técnico:
+
+    {datos_crudos}
+
+    Pregunta original del cliente: "{mensaje.texto}"
+    Determina si el inventario cubre lo que pidió y, si no, identifica la mejor alternativa real de la lista.'''
+
+    respuesta_agente2 = ollama.chat(model='gemma4:latest', messages=[
+        {'role': 'system', 'content': prompt_agente2_sistema},
+        {'role': 'user',   'content': prompt_agente2_usuario}
+    ])
+    
+    # Ahora los "datos_crudos" que le pasamos al Agente 3 son la evaluación del Agente 2
+    datos_analizados_por_agente2 = respuesta_agente2['message']['content']
+    print(f"[Agente 2 Resumen]: {datos_analizados_por_agente2}")
+
+    # =====================================================================
+    # AGENTE 3 (El Asesor de Ventas Final con contexto total)
+    # =====================================================================
+    
     mensajes_agente = [
         {
             'role': 'system',
-            'content': f'''Eres el Agente de Soporte y Ventas de 3Dubble. 
-            Responde las dudas técnicas o comerciales del cliente de forma concisa, persuasiva y profesional.
-            
-            Usa EXCLUSIVAMENTE estos datos extraídos de la base de datos para tu respuesta:
-            {datos_crudos}
-            
-            Si la base de datos muestra que un producto tiene stock, intenta cerrar la venta. Si no hay stock, ofrece alternativas válidas dentro de lo disponible.'''
+            'content': f'''Eres Duble, el asesor de ventas y soporte técnico de 3Dubble, una tienda especializada en impresión 3D.
+
+    Tu personalidad: experto, directo y genuinamente útil. Hablas de tú al cliente. No suenas como un robot de ventas.
+
+    TIENES ESTOS DATOS DEL INVENTARIO (NO inventes nada que no esté aquí):
+    {datos_analizados_por_agente2}
+
+    TU TAREA EN CADA RESPUESTA:
+    1. Responde directamente a lo que el cliente preguntó usando SOLO los datos del inventario de arriba.
+    2. Si un producto no tiene stock, explícalo con claridad y presenta la alternativa real que aparece en los datos. Di por qué esa alternativa es una buena opción.
+    3. SIEMPRE que menciones un producto disponible o una alternativa, MUESTRA su imagen usando Markdown estricto: ![Nombre del Producto](URL_DE_LA_IMAGEN).
+    4. Si todos los productos tienen stock, confirma disponibilidad y menciona el precio.
+    5. Si EL CLIENTE CONFIRMA LA COMPRA: Genera un ID de pedido único (ej: 3D-8824-X) como confirmación formal.
+    6. Si el cliente pide una COTIZACIÓN o TOTAL de varios productos:
+   - Suma los precios exactos que aparecen en los datos del inventario.
+   - Presenta el desglose línea por línea y el total al final.
+   - Formato: Producto → $precio | TOTAL: $suma
+   - Si algún producto no aparece en los datos, indícalo explícitamente.
+    7. Cierra SIEMPRE con UNA pregunta de validación.
+
+    PROHIBIDO:
+    - Inventar precios, colores, modelos o disponibilidad.
+    - Inventar URLs de imágenes que no estén en el resumen del inventario.
+    - Usar frases genéricas como "¡Excelente elección!" o "¡Con gusto te ayudo!".
+    - Repetir la pregunta del cliente textualmente.
+    - Terminar con más de una pregunta.'''
         }
     ]
     
