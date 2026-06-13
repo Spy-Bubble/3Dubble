@@ -13,6 +13,30 @@ Para ejecutar este proyecto, especialmente el motor de inteligencia artificial l
 * [Ollama](https://ollama.com/) instalado en el sistema.
 * **Hardware:** Para una inferencia fluida sin latencia perceptible en el agente de ventas, se recomienda una GPU dedicada con buena capacidad de VRAM, para este proyecto se uso una NVIDIA GeForce RTX 4060 Ti.
 
+### 🛠️ Comandos de Instalación (Windows)
+
+Si no cuentas con el software base, puedes instalarlo rápidamente abriendo **PowerShell** como administrador y ejecutando los siguientes comandos mediante el gestor de paquetes de Windows (`winget`):
+**1. Instalar Python y Node.js:**
+```bash
+# Instalar Python (Versión 3.11 recomendada)
+winget install -e --id Python.Python.3.11
+
+# Instalar Node.js (Versión LTS)
+winget install -e --id OpenJS.NodeJS.LTS
+Alternativa: Puedes descargar los instaladores gráficos desde python.org y nodejs.org
+```
+
+**2. Instalar Ollama:**
+```bash
+# Instalar el motor de IA local
+winget install -e --id Ollama.Ollama
+Alternativa: Descargar el ejecutable oficial desde ollama.com
+```
+**3. Descargar el Modelo de IA (Gemma 4):**
+```bash
+# Una vez instalado Ollama, debes descargar el modelo fundacional que da vida a los agentes ejecutando este comando en tu terminal:
+ollama run gemma4:latest
+```
 --- 
 
 ## Instrucciones Básicas de Instalación y Ejecución
