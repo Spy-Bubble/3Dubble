@@ -1,11 +1,22 @@
 nombre,compatibilidad,stock,precio,url_imagen
-Hotend Dual U1,Snapmaker U1,10,120.00,https://via.placeholder.com/500x500/E87A5D/FFFFFF?text=Hotend+U1
-Placa PEI Texturizada,Elegoo Neptune 4,15,35.00,https://via.placeholder.com/500x500/0284C7/FFFFFF?text=Placa+PEI
-Boquilla Acero Endurecido 0.4mm,Universal,50,15.00,https://via.placeholder.com/500x500/52525B/FFFFFF?text=Boquilla+0.4mm
-Módulo AMS,Bambu Lab X1/P1,8,349.00,https://via.placeholder.com/500x500/3F3F46/FFFFFF?text=Modulo+AMS
-Secador de Filamento S1,Sunlu,25,45.00,https://via.placeholder.com/500x500/18181B/FFFFFF?text=Secador+Sunlu
-Kit de Limpieza,Universal,30,12.00,https://via.placeholder.com/500x500/60A5FA/FFFFFF?text=Kit+Limpieza
-Adhesivo Magigoo 50ml,Universal,40,18.00,https://via.placeholder.com/500x500/B91C1C/FFFFFF?text=Adhesivo+Magigoo
-Extrusor Sprite Direct Drive,Creality,10,85.00,https://via.placeholder.com/500x500/18181B/FFFFFF?text=Extrusor+Sprite
-Filtro de Carbón Activo,Snapmaker,20,22.00,https://via.placeholder.com/500x500/E87A5D/FFFFFF?text=Filtro+Carbon
-Termistor NTC 100K,Universal,100,5.00,https://via.placeholder.com/500x500/52525B/FFFFFF?text=Termistor
+Paquete de Boquilla Acero Endurecido 0.2mm,Snapmaker U1,10,840,https://shop.snapmaker.com/cdn/shop/files/935.png?v=1766461576&width=900
+Placa PEI de Acero ,Snapmaker U1,8,430,https://shop.snapmaker.com/cdn/shop/files/20251015-141234.jpg?v=1763540672&width=900
+Paquete de Boquilla Acero Endurecido 0.4mm,Snapmaker U1,6,840,https://shop.snapmaker.com/cdn/shop/files/936.png?v=1766461576&width=900
+Paquete de Boquilla Acero Endurecido 0.6mm,Snapmaker U1,6,840,https://shop.snapmaker.com/cdn/shop/files/937.png?v=1766461576&width=900
+Paquete de Boquilla Acero Endurecido 0.8mm,Snapmaker U1,0,840,https://shop.snapmaker.com/cdn/shop/files/938.png?v=1766461576&width=900
+Right Nozzle Wiper,Snapmaker U1,3,70,https://shop.snapmaker.com/cdn/shop/files/24029-3.png?v=1759999250&width=900
+Left Nozzle Wiper,Snapmaker U1,4,70,https://shop.snapmaker.com/cdn/shop/files/24028-4_6f3ad17e-5284-4c98-8893-71af73b0ece2.png?v=1759999512&width=900
+Kit de Pantalla,Creality K2 Plus,7,550,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/02_f1526b80-21a6-42a1-ba42-50ada13ba6b7.png?v=1763629613
+Cinta Limpiadora de Boquilla,Creality K2 Plus,12,55,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/63-4004010266.webp?v=1763629613
+Cámara para Boquilla,Creality K2 Plus,7,220,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/65-4004010272.webp?v=1765785209
+Motor Pasador del Eje Z,Creality K2 Plus,3,190,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/9d40cd5b-44ae-4f52-b164-73a3e38e8e94.jpg?v=1765785209
+Cámara de IA,Creality K1,5,470,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/4005010060.png?v=1740390658
+Secador de filamento Space Pi,Universal,8,1100,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/Space_Pi_Filament_Dryer_1.png?v=1736759335
+Secador de Filamento SpacePi X4,Universal,3,4400,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/1600px1.png?v=1769494592
+Kit de Sensor de Filamento,Creality,15,130,https://cdn.shopify.com/s/files/1/0663/8275/8076/files/4dba39d194b725b4d048faa46f908404.jpg?v=1729829055
+AMS 2 Pro,Universal,5,9400,https://www.3dmarket.mx/wp-content/uploads/2025/03/AMS-2-Pro-Bambu-Lab-1.webp
+Laser Upgrade Kit,Bambu Lab H2S H2D,2,13400,https://www.3dmarket.mx/wp-content/uploads/2025/08/H2D-Laser-Upgrade-Kit-Bambu-Lab.webp
+AMS HT ,Universal,9,4700,https://www.3dmarket.mx/wp-content/uploads/2025/03/AMS-HT-Bambu-Lab-1.webp
+FilaDryer S4,Universal,11,3440,https://www.3dmarket.mx/wp-content/uploads/2024/11/SUNLU-FilaDryer-S4.webp
+3 Placas de Construcción Magnéticas Flexibles Diferentes,Elegoo Serie Centauri,7,2020,https://m.media-amazon.com/images/I/81HbqZ+KoKL._SL1500_.jpg
+Pegamento para Cama de Impresión,Universal,13,300,https://m.media-amazon.com/images/I/61+dTmoquvL._SL1500_.jpg
