@@ -16,6 +16,7 @@ Para ejecutar este proyecto, especialmente el motor de inteligencia artificial l
 ### 🛠️ Comandos de Instalación (Windows)
 
 Si no cuentas con el software base, puedes instalarlo rápidamente abriendo **PowerShell** como administrador y ejecutando los siguientes comandos mediante el gestor de paquetes de Windows (`winget`):
+
 **1. Instalar Python y Node.js:**
 ```bash
 # Instalar Python (Versión 3.11 recomendada)
